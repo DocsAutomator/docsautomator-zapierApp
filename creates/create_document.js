@@ -24,6 +24,33 @@ const dynamicFields = async (z, bundle) => {
   const automationResponse = await z.request(getAutomation);
   const automation = automationResponse.data[0];
 
+  // Return copy fields if automation has no data source or document template link
+  // return copy field if no data source
+  if (!automation.dataSourceName) {
+    return [
+      {
+        key: 'noDataSource',
+        label: 'Automation has no data source set.',
+        type: 'copy',
+        helpText:
+          'This automation does not have a data source. Please set a data source in the automation settings to proceed.',
+      },
+    ];
+  }
+
+  // return copy field if no docTemplateLink
+  if (!automation.googleDocTemplate) {
+    return [
+      {
+        key: 'noDocTemplateLink',
+        label: 'Automation has no document template set.',
+        type: 'copy',
+        helpText:
+          'This automation does not have a Google Doc document template. Please set a document template in the automation settings to proceed.',
+      },
+    ];
+  }
+
   if (automation.dataSourceName === 'Airtable') {
     return {
       key: 'recId',
@@ -101,8 +128,6 @@ const dynamicFields = async (z, bundle) => {
 
     return [...documentNameField, ...primaryFields, ...lineItemArr];
   }
-
-  return [];
 };
 
 const perform = async (z, bundle) => {
@@ -140,7 +165,7 @@ module.exports = {
         type: 'string',
         dynamic: 'user_automations.id.title',
         helpText:
-          'Please select your automation. Depending on the data source, you will be asked for additional information in the next step',
+          'Please select your automation. Depending on the data source, you will be asked for additional information in the next step.',
         required: true,
         list: false,
         altersDynamicFields: true,
