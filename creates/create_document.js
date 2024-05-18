@@ -1,5 +1,5 @@
-const primaryFields = async (z, bundle) => {
-  const options = {
+const dynamicFields = async (z, bundle) => {
+  const listPlaceholderOptions = {
     url: 'https://api.docsautomator.co/zapierListPlaceholders',
     method: 'GET',
     headers: {
@@ -10,65 +10,107 @@ const primaryFields = async (z, bundle) => {
     },
   };
 
-  const response = await z.request(options);
+  const getAutomation = {
+    url: 'https://api.docsautomator.co/getZapierAutomation',
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    params: {
+      docId: bundle.inputData.docId,
+    },
+  };
 
-  const results = response.data;
+  const automationResponse = await z.request(getAutomation);
+  const automation = automationResponse.data[0];
 
-  const fields = results
-    .filter((placeholder) => !placeholder.includes('line_items_'))
-    .map((placeholder) => ({
-      key: placeholder,
-      label: `{{${placeholder}}}`,
+  if (!automation.dataSourceName) {
+    throw new z.errors.Error(
+      'This automation does not have a data source. Please specify a data source first or select a different automation',
+      'InvalidData',
+      400
+    );
+  }
+
+  if (automation.dataSourceName === 'Airtable') {
+    return {
+      key: 'recId',
+      label: 'Airtable Record ID',
       type: 'string',
-      required: false,
-      helpText: `Enter the value for ${placeholder}`,
+      required: true,
+      helpText: 'Enter the Airtable record ID',
+    };
+  }
+
+  if (automation.dataSourceName === 'ClickUp') {
+    return {
+      key: 'clickUpTaskId',
+      label: 'ClickUp Task ID',
+      type: 'string',
+      required: true,
+      helpText: 'Enter the ClickUp task ID',
+    };
+  }
+
+  if (automation.dataSourceName === 'API') {
+    const response = await z.request(listPlaceholderOptions);
+
+    const results = response.data;
+
+    const primaryFields = results
+      .filter((placeholder) => !placeholder.includes('line_items_'))
+      .map((placeholder) => ({
+        key: placeholder,
+        label: `{{${placeholder}}}`,
+        type: 'string',
+        required: false,
+        helpText: `Enter the value for ${placeholder}`,
+      }));
+
+    const documentNameField = [
+      {
+        key: 'documentName',
+        label: 'Document Name',
+        type: 'string',
+        helpText:
+          'Please define a name for generated documents. Of course you can select data from previous steps.',
+        required: false,
+        list: false,
+        altersDynamicFields: false,
+      },
+    ];
+
+    const lineItemGroups = results.filter((placeholder) =>
+      placeholder.startsWith('line_items_')
+    );
+
+    // Group by the number following 'line_items_' (assuming a consistent naming pattern)
+    const groupMap = new Map();
+    lineItemGroups.forEach((placeholder) => {
+      const match = placeholder.match(/line_items_(\d+)/);
+      const groupKey = match ? `line_items_${match[1]}` : 'line_items';
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, []);
+      }
+      groupMap.get(groupKey).push({
+        key: placeholder,
+        label: `{{${placeholder}}}`,
+        type: 'string',
+        required: false,
+        helpText: `Enter the value for ${placeholder}`,
+      });
+    });
+
+    // Convert the map to an array of grouped field objects
+    const lineItemArr = Array.from(groupMap).map(([key, children]) => ({
+      key,
+      children,
     }));
 
-  return fields;
-};
+    return [...documentNameField, ...primaryFields, ...lineItemArr];
+  }
 
-const lineItemFields = async (z, bundle) => {
-  const options = {
-    url: 'https://api.docsautomator.co/zapierListPlaceholders',
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-    params: {
-      docId: bundle.inputData.docId,
-    },
-  };
-
-  const response = await z.request(options);
-
-  const results = response.data;
-
-  const lineItemGroups = results.filter((placeholder) =>
-    placeholder.startsWith('line_items_')
-  );
-
-  // Group by the number following 'line_items_' (assuming a consistent naming pattern)
-  const groupMap = new Map();
-  lineItemGroups.forEach((placeholder) => {
-    const match = placeholder.match(/line_items_(\d+)/);
-    const groupKey = match ? `line_items_${match[1]}` : 'line_items';
-    if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, []);
-    }
-    groupMap.get(groupKey).push({
-      key: placeholder,
-      label: `{{${placeholder}}}`,
-      type: 'string',
-      required: false,
-      helpText: `Enter the value for ${placeholder}`,
-    });
-  });
-
-  // Convert the map to an array of grouped field objects
-  return Array.from(groupMap).map(([key, children]) => ({
-    key,
-    children,
-  }));
+  return [];
 };
 
 const perform = async (z, bundle) => {
@@ -106,23 +148,13 @@ module.exports = {
         type: 'string',
         dynamic: 'user_automations.id.title',
         helpText:
-          'Please select your automation. Note that only automations with data source "API" will be shown here.',
+          'Please select your automation. Depending on the data source, you will be asked for additional information in the next step',
         required: true,
         list: false,
         altersDynamicFields: true,
       },
-      {
-        key: 'documentName',
-        label: 'Document Name',
-        type: 'string',
-        helpText:
-          'Please define a name for generated documents. Of course you can select data from previous steps.',
-        required: false,
-        list: false,
-        altersDynamicFields: false,
-      },
-      primaryFields,
-      lineItemFields,
+
+      dynamicFields,
     ],
     perform: perform,
     sample: {

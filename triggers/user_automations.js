@@ -20,7 +20,11 @@ module.exports = {
     perform,
     type: 'polling',
     canPaginate: true,
-    sample: { id: '64bbc8eec756ddddcd4e73fc', title: 'Invoices 2024' },
+    sample: {
+      id: '64bbc8eec756ddddcd4e73fc',
+      title: 'Invoices 2024',
+      dataSourceName: 'Airtable',
+    },
     outputFields: [
       { key: 'id', label: 'ID', type: 'string' },
       { key: 'title', label: 'Title', type: 'string' },
@@ -28,7 +32,7 @@ module.exports = {
   },
   display: {
     description:
-      'Fetches all available user automations with data source "API"',
+      'Fetches all available user automations that have a data source that is suitable for use in the "Create Document" action.',
     hidden: true,
     label: 'Automations',
   },
