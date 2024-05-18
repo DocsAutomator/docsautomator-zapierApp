@@ -24,14 +24,6 @@ const dynamicFields = async (z, bundle) => {
   const automationResponse = await z.request(getAutomation);
   const automation = automationResponse.data[0];
 
-  if (!automation.dataSourceName) {
-    throw new z.errors.Error(
-      'This automation does not have a data source. Please specify a data source first or select a different automation',
-      'InvalidData',
-      400
-    );
-  }
-
   if (automation.dataSourceName === 'Airtable') {
     return {
       key: 'recId',
