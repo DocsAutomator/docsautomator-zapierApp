@@ -80,7 +80,7 @@ const dynamicFields = async (z, bundle) => {
       .filter((placeholder) => !placeholder.includes('line_items_'))
       .map((placeholder) => ({
         key: placeholder,
-        label: `{{${placeholder}}}`,
+        label: `${placeholder}`,
         type: 'string',
         required: false,
         helpText: `Enter the value for ${placeholder}`,
@@ -113,7 +113,7 @@ const dynamicFields = async (z, bundle) => {
       }
       groupMap.get(groupKey).push({
         key: placeholder,
-        label: `{{${placeholder}}}`,
+        label: `${placeholder}`,
         type: 'string',
         required: false,
         helpText: `Enter the value for ${placeholder}`,
