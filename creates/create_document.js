@@ -71,7 +71,10 @@ const dynamicFields = async (z, bundle) => {
     };
   }
 
-  if (automation.dataSourceName === 'API') {
+  if (
+    automation.dataSourceName === 'API' ||
+    automation.dataSourceName === 'Zapier'
+  ) {
     const response = await z.request(listPlaceholderOptions);
 
     const results = response.data;
