@@ -63,7 +63,7 @@ const dynamicFields = async (z, bundle) => {
 
   if (automation.dataSourceName === 'ClickUp') {
     return {
-      key: 'clickUpTaskId',
+      key: 'taskId',
       label: 'ClickUp Task ID',
       type: 'string',
       required: true,
@@ -78,6 +78,18 @@ const dynamicFields = async (z, bundle) => {
     const response = await z.request(listPlaceholderOptions);
 
     const results = response.data;
+
+    if (!results.length) {
+      return [
+        {
+          key: 'noPlaceholders',
+          label: 'No placeholders found',
+          type: 'copy',
+          helpText:
+            'No placeholders were found in the document template. Please add placeholders to the document template to proceed.',
+        },
+      ];
+    }
 
     const primaryFields = results
       .filter((placeholder) => !placeholder.includes('line_items_'))
@@ -99,6 +111,24 @@ const dynamicFields = async (z, bundle) => {
         required: false,
         list: false,
         altersDynamicFields: false,
+      },
+    ];
+
+    const markdownOptionsPlaceholder = results.filter(
+      (placeholder) => !placeholder.includes('image_')
+    );
+
+    const markdownOptionsField = [
+      {
+        key: 'markdownOptionsViaZapierReservedWord',
+        label: 'Markdown Variables / Placeholders',
+        type: 'string',
+        helpText:
+          'Please select the variables / placeholders for which you are passing markdown. Leave empty if you are not using markdown.',
+        required: false,
+        list: true,
+        altersDynamicFields: false,
+        choices: markdownOptionsPlaceholder,
       },
     ];
 
@@ -129,7 +159,12 @@ const dynamicFields = async (z, bundle) => {
       children,
     }));
 
-    return [...documentNameField, ...primaryFields, ...lineItemArr];
+    return [
+      ...documentNameField,
+      ...primaryFields,
+      ...lineItemArr,
+      ...markdownOptionsField,
+    ];
   }
 };
 
@@ -173,7 +208,6 @@ module.exports = {
         list: false,
         altersDynamicFields: true,
       },
-
       dynamicFields,
     ],
     perform: perform,
