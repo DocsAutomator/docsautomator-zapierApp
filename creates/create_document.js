@@ -114,24 +114,6 @@ const dynamicFields = async (z, bundle) => {
       },
     ];
 
-    const markdownOptionsPlaceholder = results.filter(
-      (placeholder) => !placeholder.includes('image_')
-    );
-
-    const markdownOptionsField = [
-      {
-        key: 'markdownOptionsViaZapierReservedWord',
-        label: 'Markdown Variables / Placeholders',
-        type: 'string',
-        helpText:
-          'Please select the variables / placeholders for which you are passing markdown. Leave empty if you are not using markdown.',
-        required: false,
-        list: true,
-        altersDynamicFields: false,
-        choices: markdownOptionsPlaceholder,
-      },
-    ];
-
     const lineItemGroups = results.filter((placeholder) =>
       placeholder.startsWith('line_items_')
     );
@@ -163,7 +145,6 @@ const dynamicFields = async (z, bundle) => {
       ...documentNameField,
       ...primaryFields,
       ...lineItemArr,
-      ...markdownOptionsField,
     ];
   }
 };
